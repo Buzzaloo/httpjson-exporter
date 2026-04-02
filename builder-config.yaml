@@ -2,7 +2,6 @@ dist:
   name: otelcol-custom
   description: Custom OpenTelemetry Collector with HTTP JSON Exporter for Exaforce
   output_path: ./otelcol-custom
-  otelcol_version: 0.114.0
 
 exporters:
   - gomod: github.com/Buzzaloo/httpjson-exporter/httpjsonexporter v0.1.0
