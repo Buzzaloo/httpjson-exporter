@@ -9,6 +9,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
@@ -20,7 +21,7 @@ type Config struct {
 
 	// BearerToken is the authentication token for the HTTP endpoint.
 	// This will be sent as "Authorization: Bearer <token>" header.
-	BearerToken string `mapstructure:"bearer_token"`
+	BearerToken configopaque.String `mapstructure:"bearer_token"`
 
 	// BatchSize is the number of log records to send in a single HTTP request.
 	// Default is 100.
@@ -32,7 +33,7 @@ type Config struct {
 	Compression string `mapstructure:"compression"`
 
 	// QueueSettings defines configuration for the exporter queue.
-	QueueSettings exporterhelper.QueueSettings `mapstructure:"sending_queue"`
+	QueueSettings exporterhelper.QueueConfig `mapstructure:"sending_queue"`
 
 	// BackOffConfig defines configuration for retrying failed requests.
 	BackOffConfig configretry.BackOffConfig `mapstructure:"retry_on_failure"`
@@ -69,7 +70,7 @@ func createDefaultConfig() component.Config {
 		},
 		BatchSize:     100,
 		Compression:   "none",
-		QueueSettings: exporterhelper.NewDefaultQueueSettings(),
+		QueueSettings: exporterhelper.NewDefaultQueueConfig(),
 		BackOffConfig: configretry.NewDefaultBackOffConfig(),
 	}
 }

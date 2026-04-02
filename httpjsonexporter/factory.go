@@ -13,7 +13,7 @@ import (
 
 const (
 	// typeStr is the type of the exporter
-	typeStr = "httpjson"
+	typeStr = component.Type("httpjson")
 	// stabilityLevel is the stability level of the exporter
 	stability = component.StabilityLevelAlpha
 )
@@ -29,7 +29,7 @@ func NewFactory() exporter.Factory {
 
 func createLogsExporter(
 	ctx context.Context,
-	set exporter.CreateSettings,
+	set exporter.Settings,
 	cfg component.Config,
 ) (exporter.Logs, error) {
 	c := cfg.(*Config)
@@ -48,7 +48,7 @@ func createLogsExporter(
 		logsExporter.pushLogs,
 		exporterhelper.WithStart(logsExporter.start),
 		exporterhelper.WithShutdown(logsExporter.shutdown),
-		exporterhelper.WithTimeout(exporterhelper.TimeoutSettings{Timeout: c.Timeout}),
+		exporterhelper.WithTimeout(exporterhelper.TimeoutConfig{Timeout: c.Timeout}),
 		exporterhelper.WithRetry(c.BackOffConfig),
 		exporterhelper.WithQueue(c.QueueSettings),
 	)

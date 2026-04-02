@@ -14,6 +14,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
 )
@@ -26,7 +27,7 @@ type httpJSONLogsExporter struct {
 
 func newLogsExporter(
 	ctx context.Context,
-	set exporter.CreateSettings,
+	set exporter.Settings,
 	config *Config,
 ) (*httpJSONLogsExporter, error) {
 	client, err := config.ToClient(ctx, set.TelemetrySettings)
@@ -104,18 +105,19 @@ func (e *httpJSONLogsExporter) logsToJSON(ld plog.Logs) ([][]byte, error) {
 				}
 				
 				// Add body
-				if logRecord.Body().Type() != plog.ValueTypeEmpty {
-					logMap["body"] = logRecord.Body().AsString()
+				body := logRecord.Body()
+				if body.Type() != 0 { // 0 is empty type
+					logMap["body"] = body.AsString()
 				}
 				
 				// Add attributes
-				logRecord.Attributes().Range(func(k string, v plog.Value) bool {
+				logRecord.Attributes().Range(func(k string, v pcommon.Value) bool {
 					logMap[k] = v.AsRaw()
 					return true
 				})
 				
 				// Add resource attributes with a prefix to avoid collisions
-				resourceLogs.Resource().Attributes().Range(func(k string, v plog.Value) bool {
+				resourceLogs.Resource().Attributes().Range(func(k string, v pcommon.Value) bool {
 					logMap["resource."+k] = v.AsRaw()
 					return true
 				})
@@ -174,7 +176,7 @@ func (e *httpJSONLogsExporter) sendRequest(ctx context.Context, body io.Reader) 
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/x-ndjson")
-	req.Header.Set("Authorization", "Bearer "+e.config.BearerToken)
+	req.Header.Set("Authorization", "Bearer "+string(e.config.BearerToken))
 	
 	if e.config.Compression == "gzip" {
 		req.Header.Set("Content-Encoding", "gzip")
