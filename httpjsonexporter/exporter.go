@@ -189,7 +189,7 @@ func (e *httpJSONLogsExporter) sendRequest(ctx context.Context, body io.Reader) 
 
 	// Add any additional headers from config
 	for key, value := range e.config.Headers {
-		req.Header.Set(key, value)
+		req.Header.Set(key, string(value))
 	}
 
 	// Send the request
