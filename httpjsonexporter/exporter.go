@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -20,9 +21,11 @@ import (
 )
 
 type httpJSONLogsExporter struct {
-	config *Config
-	client *http.Client
-	logger *zap.Logger
+	config         *Config
+	client         *http.Client
+	clientSettings *confighttp.ClientConfig
+	logger         *zap.Logger
+	settings       component.TelemetrySettings
 }
 
 func newLogsExporter(
@@ -30,19 +33,21 @@ func newLogsExporter(
 	set exporter.Settings,
 	config *Config,
 ) (*httpJSONLogsExporter, error) {
-	client, err := config.ToClient(ctx, set.TelemetrySettings)
-	if err != nil {
-		return nil, err
-	}
-
 	return &httpJSONLogsExporter{
-		config: config,
-		client: client,
-		logger: set.Logger,
+		config:         config,
+		clientSettings: &config.ClientConfig,
+		client:         nil,
+		logger:         set.Logger,
+		settings:       set.TelemetrySettings,
 	}, nil
 }
 
 func (e *httpJSONLogsExporter) start(ctx context.Context, host component.Host) error {
+	client, err := e.clientSettings.ToClient(ctx, host, e.settings)
+	if err != nil {
+		return err
+	}
+	e.client = client
 	return nil
 }
 

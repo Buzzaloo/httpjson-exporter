@@ -11,9 +11,12 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
+var (
+	// Type is the component type
+	Type = component.MustNewType("httpjson")
+)
+
 const (
-	// typeStr is the type of the exporter
-	typeStr = component.Type("httpjson")
 	// stabilityLevel is the stability level of the exporter
 	stability = component.StabilityLevelAlpha
 )
@@ -21,7 +24,7 @@ const (
 // NewFactory creates a factory for HTTP JSON exporter.
 func NewFactory() exporter.Factory {
 	return exporter.NewFactory(
-		typeStr,
+		Type,
 		createDefaultConfig,
 		exporter.WithLogs(createLogsExporter, stability),
 	)
@@ -41,7 +44,7 @@ func createLogsExporter(
 	}
 
 	// Wrap with standard exporter helper for retry, queue, and observability
-	return exporterhelper.NewLogsExporter(
+	return exporterhelper.NewLogs(
 		ctx,
 		set,
 		cfg,
