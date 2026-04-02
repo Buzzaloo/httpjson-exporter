@@ -109,10 +109,20 @@ func (e *httpJSONLogsExporter) logsToJSON(ld plog.Logs) ([][]byte, error) {
 					logMap["severity_text"] = logRecord.SeverityText()
 				}
 				
-				// Add body
+				// Handle body - try to parse as JSON and flatten
 				body := logRecord.Body()
 				if body.Type() != 0 { // 0 is empty type
-					logMap["body"] = body.AsString()
+					bodyStr := body.AsString()
+					
+					// Try to parse body as JSON
+					var bodyMap map[string]interface{}
+					if err := json.Unmarshal([]byte(bodyStr), &bodyMap); err == nil {
+						// Body is JSON - flatten it to top level
+						flattenMap("", bodyMap, logMap)
+					} else {
+						// Body is not JSON - add as string
+						logMap["body"] = bodyStr
+					}
 				}
 				
 				// Add attributes
@@ -206,4 +216,27 @@ func (e *httpJSONLogsExporter) sendRequest(ctx context.Context, body io.Reader) 
 	}
 
 	return nil
+}
+
+// flattenMap recursively flattens a nested map into the target map
+// prefix is used to create dotted keys for nested objects
+func flattenMap(prefix string, source map[string]interface{}, target map[string]interface{}) {
+	for key, value := range source {
+		fullKey := key
+		if prefix != "" {
+			fullKey = prefix + "." + key
+		}
+		
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// Recursively flatten nested maps
+			flattenMap(fullKey, v, target)
+		case []interface{}:
+			// For arrays, store as-is (don't flatten further)
+			target[fullKey] = v
+		default:
+			// Primitive values - add directly
+			target[fullKey] = v
+		}
+	}
 }
