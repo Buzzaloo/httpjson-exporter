@@ -33,7 +33,7 @@ jobs:
     
     - name: Rename binary
       run: |
-        Move-Item -Path "otelcol-custom\otelcol-custom.exe" -Destination "otelcol-exaforce-windows-amd64.exe"
+        Move-Item -Path "otelcol-custom\otelcol-custom" -Destination "otelcol-exaforce-windows-amd64.exe"
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
