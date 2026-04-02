@@ -1,0 +1,65 @@
+name: Build Windows Collector
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    name: Build for Windows
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Install OpenTelemetry Collector Builder
+      run: go install go.opentelemetry.io/collector/cmd/builder@v0.95.0
+    
+    - name: Build Windows Binary
+      run: |
+        $env:GOOS = "windows"
+        $env:GOARCH = "amd64"
+        & "$env:USERPROFILE\go\bin\builder.exe" --config builder-config.yaml
+    
+    - name: Rename binary
+      run: |
+        Move-Item -Path "otelcol-custom\otelcol-custom.exe" -Destination "otelcol-exaforce-windows-amd64.exe"
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: otelcol-exaforce-windows-amd64
+        path: otelcol-exaforce-windows-amd64.exe
+    
+    - name: Create checksum
+      run: |
+        $hash = Get-FileHash -Path "otelcol-exaforce-windows-amd64.exe" -Algorithm SHA256
+        $hash.Hash | Out-File -FilePath "otelcol-exaforce-windows-amd64.exe.sha256"
+    
+    - name: Upload checksum
+      uses: actions/upload-artifact@v4
+      with:
+        name: otelcol-exaforce-windows-amd64-checksum
+        path: otelcol-exaforce-windows-amd64.exe.sha256
+    
+    # If this is a release, upload the binary as a release asset
+    - name: Upload Release Asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./otelcol-exaforce-windows-amd64.exe
+        asset_name: otelcol-exaforce-windows-amd64.exe
+        asset_content_type: application/octet-stream

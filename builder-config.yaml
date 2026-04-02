@@ -1,0 +1,21 @@
+dist:
+  name: otelcol-custom
+  description: Custom OpenTelemetry Collector with HTTP JSON Exporter for Exaforce
+  output_path: ./otelcol-custom
+  otelcol_version: 0.95.0
+
+exporters:
+  - gomod: github.com/ExaForce/httpjsonexporter v0.1.0
+    path: ./httpjsonexporter
+
+receivers:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowseventlogreceiver v0.95.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.95.0
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.95.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.95.0
+
+extensions:
+  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.95.0
+  - gomod: go.opentelemetry.io/collector/extension/healthcheckextension v0.95.0

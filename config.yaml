@@ -1,0 +1,84 @@
+# OpenTelemetry Collector Configuration
+# Windows Event Logs to Exaforce HTTP Endpoint
+
+receivers:
+  windowseventlog/system:
+    channel: System
+  
+  windowseventlog/application:
+    channel: Application
+  
+  windowseventlog/security:
+    channel: Security
+
+processors:
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 200
+    spike_limit_mib: 20
+  
+  batch:
+    send_batch_size: 100
+    timeout: 10s
+  
+  resourcedetection:
+    detectors: [system]
+    override: false
+
+exporters:
+  # HTTP JSON Exporter for Exaforce
+  httpjson:
+    # REPLACE THIS with your Exaforce tenant URL
+    endpoint: "https://YOUR-TENANT.us.app.exaforce.io/api/v1/logs/ingest"
+    
+    # Use environment variable for token
+    bearer_token: "${EXAFORCE_API_TOKEN}"
+    
+    # Enable compression to reduce bandwidth
+    compression: gzip
+    
+    # Timeout for HTTP requests
+    timeout: 30s
+    
+    # Number of logs per HTTP request
+    batch_size: 100
+    
+    # Optional custom headers
+    headers:
+      X-Source: "windows-otel-collector"
+    
+    # Retry configuration
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    
+    # Queue configuration
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, zpages]
+  
+  pipelines:
+    logs:
+      receivers: [windowseventlog/system, windowseventlog/application, windowseventlog/security]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [httpjson]
+  
+  telemetry:
+    logs:
+      level: info
+      encoding: console
+      output_paths:
+        - "/var/log/otelcol/otelcol.log"
+        - stderr

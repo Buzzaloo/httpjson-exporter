@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  otelcol:
+    image: otelcol-exaforce:latest
+    container_name: otelcol-exaforce
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/etc/otelcol/config.yaml:ro
+      - ./logs:/var/log/otelcol
+    environment:
+      - EXAFORCE_API_TOKEN=${EXAFORCE_API_TOKEN}
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver (if you add it later)
+      - "4318:4318"   # OTLP HTTP receiver (if you add it later)
+      - "13133:13133" # Health check endpoint
